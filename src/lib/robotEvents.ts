@@ -106,8 +106,8 @@ export interface SkillsSummary {
 }
 
 export async function fetchSkills(teamId: number, season?: number): Promise<SkillsSummary> {
-  // Use the current season (181 = 2024-2025 High Stakes, update as needed)
-  const seasonId = season ?? 190;
+  // Use the current season (197 = Push Back / 2025-2026)
+  const seasonId = season ?? 197;
   const data: any = await cachedFetch(
     `${BASE_URL}/teams/${teamId}/skills?season%5B%5D=${seasonId}`
   );
@@ -122,17 +122,18 @@ export async function fetchSkills(teamId: number, season?: number): Promise<Skil
 
   let bestDriver = 0;
   let bestProgramming = 0;
-  let worldRank: number | null = null;
 
   for (const r of records) {
     if (r.type === "driver" && r.score > bestDriver) {
       bestDriver = r.score;
-      worldRank = r.rank || worldRank;
     }
     if (r.type === "programming" && r.score > bestProgramming) {
       bestProgramming = r.score;
     }
   }
+
+  // Fetch actual world skills ranking from the rankings endpoint
+  const worldRank = await fetchWorldSkillsRank(teamId, seasonId);
 
   return {
     driver: bestDriver,
@@ -141,6 +142,48 @@ export async function fetchSkills(teamId: number, season?: number): Promise<Skil
     worldRank,
     records,
   };
+}
+
+/**
+ * Fetch the team's world skills ranking from the /skills/rankings endpoint.
+ * This returns the actual global ranking, not the per-event rank.
+ */
+async function fetchWorldSkillsRank(teamId: number, seasonId: number): Promise<number | null> {
+  try {
+    // The rankings endpoint returns teams sorted by combined skills score.
+    // We paginate through to find the team's position.
+    // First try a direct lookup — many API versions support team[] filter on rankings.
+    const data: any = await cachedFetch(
+      `${BASE_URL}/skills/rankings?season%5B%5D=${seasonId}&team%5B%5D=${teamId}`
+    );
+    if (data.data && data.data.length > 0) {
+      return data.data[0].rank ?? null;
+    }
+  } catch {
+    // Rankings endpoint may not support team filter — fall back gracefully
+  }
+
+  // Fallback: search through paginated world rankings for this team
+  try {
+    let page = 1;
+    while (page <= 50) {
+      const data: any = await cachedFetch(
+        `${BASE_URL}/skills/rankings?season%5B%5D=${seasonId}&page=${page}&per_page=50`
+      );
+      if (!data.data || data.data.length === 0) break;
+      for (const entry of data.data) {
+        if (entry.team?.id === teamId) {
+          return entry.rank ?? null;
+        }
+      }
+      if (data.meta?.current_page >= data.meta?.last_page) break;
+      page++;
+    }
+  } catch {
+    // If rankings not available, return null
+  }
+
+  return null;
 }
 
 export interface Award {
@@ -170,19 +213,31 @@ function categorizeAward(name: string): Award["category"] {
   return "Other";
 }
 
-export async function fetchAwards(teamId: number): Promise<Award[]> {
-  const items = await paginateAll<any>(`${BASE_URL}/teams/${teamId}/awards`);
-  return items.map((a: any) => ({
-    name: a.title ?? a.name ?? "Award",
-    event: a.event?.name ?? "Unknown Event",
-    date: a.event?.start ?? "",
-    season: a.season?.name ?? "",
-    category: categorizeAward(a.title ?? a.name ?? ""),
-  }));
+export async function fetchAwards(teamId: number, season?: number): Promise<Award[]> {
+  const seasonId = season ?? 197;
+  const items = await paginateAll<any>(
+    `${BASE_URL}/teams/${teamId}/awards?season%5B%5D=${seasonId}`
+  );
+  return items
+    .filter((a: any) => {
+      // Extra safety: only include awards from July 2025 onward (Push Back season start)
+      const date = a.event?.start ?? "";
+      if (date) {
+        return new Date(date) >= new Date("2025-07-01");
+      }
+      return true; // keep if no date available
+    })
+    .map((a: any) => ({
+      name: a.title ?? a.name ?? "Award",
+      event: a.event?.name ?? "Unknown Event",
+      date: a.event?.start ?? "",
+      season: a.season?.name ?? "",
+      category: categorizeAward(a.title ?? a.name ?? ""),
+    }));
 }
 
 export async function fetchTopSkills(season?: number): Promise<number> {
-  const seasonId = season ?? 190;
+  const seasonId = season ?? 197;
   try {
     const data: any = await cachedFetch(
       `${BASE_URL}/skills?season%5B%5D=${seasonId}&per_page=1&page=1`
