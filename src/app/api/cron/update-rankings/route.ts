@@ -11,16 +11,18 @@ function headers() {
 }
 
 async function apiFetch<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: headers() });
-  if (res.status === 429) {
-    // Rate limited — wait 2s and retry once
-    await new Promise((r) => setTimeout(r, 2000));
-    const retry = await fetch(url, { headers: headers() });
-    if (!retry.ok) throw new Error(`API error ${retry.status}`);
-    return retry.json() as Promise<T>;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const res = await fetch(url, { headers: headers() });
+    if (res.status === 429) {
+      const wait = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s, 16s, 32s
+      console.log(`Rate limited, waiting ${wait / 1000}s (attempt ${attempt + 1}/5)`);
+      await new Promise((r) => setTimeout(r, wait));
+      continue;
+    }
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    return res.json() as Promise<T>;
   }
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  return res.json() as Promise<T>;
+  throw new Error("API error 429: rate limited after 5 retries");
 }
 
 /** Fetch all event IDs for the season */
@@ -77,39 +79,40 @@ export async function GET(req: NextRequest) {
       { teamNumber: string; teamId: number; driver: number; programming: number }
     >();
 
-    // Process events in batches of 5 to stay within rate limits
-    for (let i = 0; i < eventIds.length; i += 5) {
-      const batch = eventIds.slice(i, i + 5);
-      const results = await Promise.all(batch.map((id) => fetchEventSkills(id)));
+    // Process events one at a time with delays to avoid rate limits
+    for (let i = 0; i < eventIds.length; i++) {
+      const entries = await fetchEventSkills(eventIds[i]);
 
-      for (const entries of results) {
-        for (const entry of entries) {
-          const teamNumber: string = entry.team?.name ?? "";
-          const teamId: number = entry.team?.id ?? 0;
-          if (!teamNumber || !teamId) continue;
+      for (const entry of entries) {
+        const teamNumber: string = entry.team?.name ?? "";
+        const teamId: number = entry.team?.id ?? 0;
+        if (!teamNumber || !teamId) continue;
 
-          const existing = teamBests.get(teamNumber) ?? {
-            teamNumber,
-            teamId,
-            driver: 0,
-            programming: 0,
-          };
+        const existing = teamBests.get(teamNumber) ?? {
+          teamNumber,
+          teamId,
+          driver: 0,
+          programming: 0,
+        };
 
-          const score: number = entry.score ?? 0;
-          if (entry.type === "driver" && score > existing.driver) {
-            existing.driver = score;
-          }
-          if (entry.type === "programming" && score > existing.programming) {
-            existing.programming = score;
-          }
-
-          teamBests.set(teamNumber, existing);
+        const score: number = entry.score ?? 0;
+        if (entry.type === "driver" && score > existing.driver) {
+          existing.driver = score;
         }
+        if (entry.type === "programming" && score > existing.programming) {
+          existing.programming = score;
+        }
+
+        teamBests.set(teamNumber, existing);
       }
 
-      // Small delay between batches to respect rate limits
-      if (i + 5 < eventIds.length) {
-        await new Promise((r) => setTimeout(r, 500));
+      // Delay between events to respect rate limits (~1 req/sec)
+      if (i < eventIds.length - 1) {
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+
+      if ((i + 1) % 50 === 0) {
+        console.log(`Processed ${i + 1}/${eventIds.length} events...`);
       }
     }
 

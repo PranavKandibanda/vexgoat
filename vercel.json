@@ -4,5 +4,10 @@
       "path": "/api/cron/update-rankings",
       "schedule": "0 6 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/cron/update-rankings/route.ts": {
+      "maxDuration": 300
+    }
+  }
 }
