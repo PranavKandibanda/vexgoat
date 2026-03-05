@@ -132,58 +132,26 @@ export async function fetchSkills(teamId: number, season?: number): Promise<Skil
     }
   }
 
-  // Fetch actual world skills ranking from the rankings endpoint
-  const worldRank = await fetchWorldSkillsRank(teamId, seasonId);
+  // Derive best event skills rank from records (rank is per-event combined placement)
+  let bestEventRank: number | null = null;
+  const seenRanks = new Set<string>();
+  for (const r of records) {
+    const key = `${r.event}-${r.rank}`;
+    if (r.rank > 0 && !seenRanks.has(key)) {
+      seenRanks.add(key);
+      if (bestEventRank === null || r.rank < bestEventRank) {
+        bestEventRank = r.rank;
+      }
+    }
+  }
 
   return {
     driver: bestDriver,
     programming: bestProgramming,
     total: bestDriver + bestProgramming,
-    worldRank,
+    worldRank: bestEventRank,
     records,
   };
-}
-
-/**
- * Fetch the team's world skills ranking from the /skills/rankings endpoint.
- * This returns the actual global ranking, not the per-event rank.
- */
-async function fetchWorldSkillsRank(teamId: number, seasonId: number): Promise<number | null> {
-  try {
-    // The rankings endpoint returns teams sorted by combined skills score.
-    // We paginate through to find the team's position.
-    // First try a direct lookup — many API versions support team[] filter on rankings.
-    const data: any = await cachedFetch(
-      `${BASE_URL}/skills/rankings?season%5B%5D=${seasonId}&team%5B%5D=${teamId}`
-    );
-    if (data.data && data.data.length > 0) {
-      return data.data[0].rank ?? null;
-    }
-  } catch {
-    // Rankings endpoint may not support team filter — fall back gracefully
-  }
-
-  // Fallback: search through paginated world rankings for this team
-  try {
-    let page = 1;
-    while (page <= 50) {
-      const data: any = await cachedFetch(
-        `${BASE_URL}/skills/rankings?season%5B%5D=${seasonId}&page=${page}&per_page=50`
-      );
-      if (!data.data || data.data.length === 0) break;
-      for (const entry of data.data) {
-        if (entry.team?.id === teamId) {
-          return entry.rank ?? null;
-        }
-      }
-      if (data.meta?.current_page >= data.meta?.last_page) break;
-      page++;
-    }
-  } catch {
-    // If rankings not available, return null
-  }
-
-  return null;
 }
 
 export interface Award {

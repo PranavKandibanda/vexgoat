@@ -13,7 +13,7 @@ export interface StrengthResult {
   consistencyComponent: number;
 }
 
-const MAX_SKILLS = 900; // theoretical max combined (high end, adjusted)
+const MAX_SKILLS = 238; // theoretical max combined (119 driver + 119 programming)
 
 function computeSkillsComponent(skills: SkillsSummary): number {
   // 50% weight, scaled 0-50
