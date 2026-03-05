@@ -14,7 +14,7 @@ async function apiFetch<T>(url: string): Promise<T> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const res = await fetch(url, { headers: headers() });
     if (res.status === 429) {
-      const wait = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s, 16s, 32s
+      const wait = Math.pow(2, attempt + 1) * 1000;
       console.log(`Rate limited, waiting ${wait / 1000}s (attempt ${attempt + 1}/5)`);
       await new Promise((r) => setTimeout(r, wait));
       continue;
@@ -25,19 +25,27 @@ async function apiFetch<T>(url: string): Promise<T> {
   throw new Error("API error 429: rate limited after 5 retries");
 }
 
-/** Fetch all event IDs for the season */
-async function fetchAllEventIds(): Promise<number[]> {
+/**
+ * Fetch events that started in the last N days.
+ * This keeps the request count small enough for a 60s function.
+ */
+async function fetchRecentEventIds(daysBack: number): Promise<number[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - daysBack);
+  const sinceStr = since.toISOString().split("T")[0]; // YYYY-MM-DD
+
   const ids: number[] = [];
   let page = 1;
   while (true) {
     const data: any = await apiFetch(
-      `${BASE_URL}/seasons/${SEASON_ID}/events?per_page=100&page=${page}`
+      `${BASE_URL}/seasons/${SEASON_ID}/events?start=${sinceStr}&per_page=100&page=${page}`
     );
     if (!data.data?.length) break;
     for (const e of data.data) ids.push(e.id);
     if (data.meta?.current_page >= data.meta?.last_page) break;
     page++;
-    if (page > 100) break;
+    if (page > 10) break;
+    await new Promise((r) => setTimeout(r, 500));
   }
   return ids;
 }
@@ -55,6 +63,7 @@ async function fetchEventSkills(eventId: number): Promise<any[]> {
     if (data.meta?.current_page >= data.meta?.last_page) break;
     page++;
     if (page > 20) break;
+    await new Promise((r) => setTimeout(r, 500));
   }
   return items;
 }
@@ -67,19 +76,35 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    console.log("Starting world skills ranking update...");
+    console.log("Starting incremental skills ranking update...");
 
-    // 1. Fetch all events for the season
-    const eventIds = await fetchAllEventIds();
-    console.log(`Found ${eventIds.length} events`);
+    // 1. Fetch only events from the last 3 days
+    const eventIds = await fetchRecentEventIds(3);
+    console.log(`Found ${eventIds.length} recent events`);
 
-    // 2. Aggregate best driver + best programming per team across all events
+    if (eventIds.length === 0) {
+      return NextResponse.json({ success: true, message: "No recent events to process" });
+    }
+
+    // 2. Load existing rankings from Firestore
+    const existingDocs = await db.collection("skills_rankings").get();
     const teamBests = new Map<
       string,
       { teamNumber: string; teamId: number; driver: number; programming: number }
     >();
+    for (const doc of existingDocs.docs) {
+      if (doc.id === "_meta") continue;
+      const d = doc.data();
+      teamBests.set(doc.id, {
+        teamNumber: d.teamNumber,
+        teamId: d.teamId,
+        driver: d.driver,
+        programming: d.programming,
+      });
+    }
+    console.log(`Loaded ${teamBests.size} existing teams from Firestore`);
 
-    // Process events one at a time with delays to avoid rate limits
+    // 3. Process recent events and merge new data
     for (let i = 0; i < eventIds.length; i++) {
       const entries = await fetchEventSkills(eventIds[i]);
 
@@ -106,23 +131,17 @@ export async function GET(req: NextRequest) {
         teamBests.set(teamNumber, existing);
       }
 
-      // Delay between events to respect rate limits (~1 req/sec)
       if (i < eventIds.length - 1) {
-        await new Promise((r) => setTimeout(r, 1200));
-      }
-
-      if ((i + 1) % 50 === 0) {
-        console.log(`Processed ${i + 1}/${eventIds.length} events...`);
+        await new Promise((r) => setTimeout(r, 800));
       }
     }
 
-    // 3. Sort by combined score descending, assign ranks
+    // 4. Re-rank all teams
     const sorted = [...teamBests.values()]
       .map((t) => ({ ...t, combined: t.driver + t.programming }))
       .filter((t) => t.combined > 0)
       .sort((a, b) => b.combined - a.combined);
 
-    // Assign ranks (teams with same combined score get same rank)
     let rank = 1;
     for (let i = 0; i < sorted.length; i++) {
       if (i > 0 && sorted[i].combined < sorted[i - 1].combined) {
@@ -131,9 +150,9 @@ export async function GET(req: NextRequest) {
       (sorted[i] as any).rank = rank;
     }
 
-    console.log(`Computed rankings for ${sorted.length} teams`);
+    console.log(`Ranked ${sorted.length} teams`);
 
-    // 4. Write to Firestore in batches of 500 (Firestore batch limit)
+    // 5. Write updated rankings to Firestore
     const updatedAt = new Date().toISOString();
     for (let i = 0; i < sorted.length; i += 500) {
       const batch = db.batch();
@@ -152,20 +171,19 @@ export async function GET(req: NextRequest) {
       await batch.commit();
     }
 
-    // 5. Write metadata
     await db.collection("skills_rankings").doc("_meta").set({
       lastUpdated: updatedAt,
       totalTeams: sorted.length,
-      totalEvents: eventIds.length,
+      recentEventsProcessed: eventIds.length,
       seasonId: SEASON_ID,
     });
 
-    console.log("Rankings update complete!");
+    console.log("Incremental update complete!");
 
     return NextResponse.json({
       success: true,
+      recentEvents: eventIds.length,
       totalTeams: sorted.length,
-      totalEvents: eventIds.length,
       updatedAt,
     });
   } catch (err: any) {
