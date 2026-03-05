@@ -35,7 +35,7 @@ export default function SkillsChart({ skills }: Props) {
     { subject: "Programming", A: skills.programming, fullMark: 450 },
     { subject: "Total", A: skills.total, fullMark: 900 },
     {
-      subject: "Best Event Rank",
+      subject: "World Rank",
       A: skills.worldRank ? Math.max(0, 500 - skills.worldRank) : 0,
       fullMark: 500,
     },
@@ -85,7 +85,7 @@ export default function SkillsChart({ skills }: Props) {
             </tr>
             <tr>
               <td className="py-2 text-gray-800 dark:text-gray-200">
-                Best Event Rank
+                World Rank
               </td>
               <td className="py-2 text-right font-mono font-bold text-amber-500">
                 {skills.worldRank ? `#${skills.worldRank}` : "N/A"}

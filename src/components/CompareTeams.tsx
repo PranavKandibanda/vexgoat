@@ -134,7 +134,7 @@ export default function CompareTeams() {
                     extra={`${d.strength.tierEmoji} ${d.strength.tier}`}
                   />
                   <Stat
-                    label="Best Event Rank"
+                    label="World Rank"
                     value={d.skills.worldRank ? `#${d.skills.worldRank}` : "N/A"}
                   />
                 </div>

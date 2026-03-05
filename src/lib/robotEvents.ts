@@ -2,6 +2,8 @@
  * RobotEvents API client — all calls are server-side only.
  */
 
+import { db } from "./firebase";
+
 const BASE_URL = "https://www.robotevents.com/api/v2";
 
 function headers() {
@@ -105,7 +107,7 @@ export interface SkillsSummary {
   records: SkillsRecord[];
 }
 
-export async function fetchSkills(teamId: number, season?: number): Promise<SkillsSummary> {
+export async function fetchSkills(teamId: number, teamNumber: string, season?: number): Promise<SkillsSummary> {
   // Use the current season (197 = Push Back / 2025-2026)
   const seasonId = season ?? 197;
   const data: any = await cachedFetch(
@@ -132,24 +134,22 @@ export async function fetchSkills(teamId: number, season?: number): Promise<Skil
     }
   }
 
-  // Derive best event skills rank from records (rank is per-event combined placement)
-  let bestEventRank: number | null = null;
-  const seenRanks = new Set<string>();
-  for (const r of records) {
-    const key = `${r.event}-${r.rank}`;
-    if (r.rank > 0 && !seenRanks.has(key)) {
-      seenRanks.add(key);
-      if (bestEventRank === null || r.rank < bestEventRank) {
-        bestEventRank = r.rank;
-      }
+  // Look up world skills ranking from Firestore (populated by daily cron)
+  let worldRank: number | null = null;
+  try {
+    const doc = await db.collection("skills_rankings").doc(teamNumber).get();
+    if (doc.exists) {
+      worldRank = doc.data()?.rank ?? null;
     }
+  } catch {
+    // Firestore unavailable — fall back to null
   }
 
   return {
     driver: bestDriver,
     programming: bestProgramming,
     total: bestDriver + bestProgramming,
-    worldRank: bestEventRank,
+    worldRank,
     records,
   };
 }

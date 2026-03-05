@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   try {
     const team = await fetchTeam(number.trim());
     const [skills, awards] = await Promise.all([
-      fetchSkills(team.id),
+      fetchSkills(team.id, team.number),
       fetchAwards(team.id),
     ]);
     const strength = calculateStrength(skills, awards);

@@ -1,0 +1,175 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+
+const BASE_URL = "https://www.robotevents.com/api/v2";
+const SEASON_ID = 197; // Push Back 2025-2026
+
+function headers() {
+  const key = process.env.ROBOT_EVENTS_API_KEY;
+  if (!key) throw new Error("ROBOT_EVENTS_API_KEY is not set");
+  return { Authorization: `Bearer ${key}`, Accept: "application/json" };
+}
+
+async function apiFetch<T>(url: string): Promise<T> {
+  const res = await fetch(url, { headers: headers() });
+  if (res.status === 429) {
+    // Rate limited — wait 2s and retry once
+    await new Promise((r) => setTimeout(r, 2000));
+    const retry = await fetch(url, { headers: headers() });
+    if (!retry.ok) throw new Error(`API error ${retry.status}`);
+    return retry.json() as Promise<T>;
+  }
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+/** Fetch all event IDs for the season */
+async function fetchAllEventIds(): Promise<number[]> {
+  const ids: number[] = [];
+  let page = 1;
+  while (true) {
+    const data: any = await apiFetch(
+      `${BASE_URL}/seasons/${SEASON_ID}/events?per_page=100&page=${page}`
+    );
+    if (!data.data?.length) break;
+    for (const e of data.data) ids.push(e.id);
+    if (data.meta?.current_page >= data.meta?.last_page) break;
+    page++;
+    if (page > 100) break;
+  }
+  return ids;
+}
+
+/** Fetch all skills entries for one event */
+async function fetchEventSkills(eventId: number): Promise<any[]> {
+  const items: any[] = [];
+  let page = 1;
+  while (true) {
+    const data: any = await apiFetch(
+      `${BASE_URL}/events/${eventId}/skills?per_page=100&page=${page}`
+    );
+    if (!data.data?.length) break;
+    items.push(...data.data);
+    if (data.meta?.current_page >= data.meta?.last_page) break;
+    page++;
+    if (page > 20) break;
+  }
+  return items;
+}
+
+export async function GET(req: NextRequest) {
+  // Verify cron secret to prevent unauthorized access
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    console.log("Starting world skills ranking update...");
+
+    // 1. Fetch all events for the season
+    const eventIds = await fetchAllEventIds();
+    console.log(`Found ${eventIds.length} events`);
+
+    // 2. Aggregate best driver + best programming per team across all events
+    const teamBests = new Map<
+      string,
+      { teamNumber: string; teamId: number; driver: number; programming: number }
+    >();
+
+    // Process events in batches of 5 to stay within rate limits
+    for (let i = 0; i < eventIds.length; i += 5) {
+      const batch = eventIds.slice(i, i + 5);
+      const results = await Promise.all(batch.map((id) => fetchEventSkills(id)));
+
+      for (const entries of results) {
+        for (const entry of entries) {
+          const teamNumber: string = entry.team?.name ?? "";
+          const teamId: number = entry.team?.id ?? 0;
+          if (!teamNumber || !teamId) continue;
+
+          const existing = teamBests.get(teamNumber) ?? {
+            teamNumber,
+            teamId,
+            driver: 0,
+            programming: 0,
+          };
+
+          const score: number = entry.score ?? 0;
+          if (entry.type === "driver" && score > existing.driver) {
+            existing.driver = score;
+          }
+          if (entry.type === "programming" && score > existing.programming) {
+            existing.programming = score;
+          }
+
+          teamBests.set(teamNumber, existing);
+        }
+      }
+
+      // Small delay between batches to respect rate limits
+      if (i + 5 < eventIds.length) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
+
+    // 3. Sort by combined score descending, assign ranks
+    const sorted = [...teamBests.values()]
+      .map((t) => ({ ...t, combined: t.driver + t.programming }))
+      .filter((t) => t.combined > 0)
+      .sort((a, b) => b.combined - a.combined);
+
+    // Assign ranks (teams with same combined score get same rank)
+    let rank = 1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i].combined < sorted[i - 1].combined) {
+        rank = i + 1;
+      }
+      (sorted[i] as any).rank = rank;
+    }
+
+    console.log(`Computed rankings for ${sorted.length} teams`);
+
+    // 4. Write to Firestore in batches of 500 (Firestore batch limit)
+    const updatedAt = new Date().toISOString();
+    for (let i = 0; i < sorted.length; i += 500) {
+      const batch = db.batch();
+      for (const team of sorted.slice(i, i + 500)) {
+        const ref = db.collection("skills_rankings").doc(team.teamNumber);
+        batch.set(ref, {
+          rank: (team as any).rank,
+          teamNumber: team.teamNumber,
+          teamId: team.teamId,
+          driver: team.driver,
+          programming: team.programming,
+          combined: team.combined,
+          updatedAt,
+        });
+      }
+      await batch.commit();
+    }
+
+    // 5. Write metadata
+    await db.collection("skills_rankings").doc("_meta").set({
+      lastUpdated: updatedAt,
+      totalTeams: sorted.length,
+      totalEvents: eventIds.length,
+      seasonId: SEASON_ID,
+    });
+
+    console.log("Rankings update complete!");
+
+    return NextResponse.json({
+      success: true,
+      totalTeams: sorted.length,
+      totalEvents: eventIds.length,
+      updatedAt,
+    });
+  } catch (err: any) {
+    console.error("Cron update-rankings error:", err);
+    return NextResponse.json(
+      { error: "Failed to update rankings", details: err.message },
+      { status: 500 }
+    );
+  }
+}
