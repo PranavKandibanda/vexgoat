@@ -103,7 +103,7 @@ export default function SkillsChart({ skills }: Props) {
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+              <Bar dataKey="score" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                 {barData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i]} />
                 ))}
@@ -120,7 +120,7 @@ export default function SkillsChart({ skills }: Props) {
               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
               <PolarRadiusAxis tick={false} axisLine={false} domain={[0, Math.max(skills.total, 1)]} />
               <Tooltip />
-              <Radar dataKey="score" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} />
+              <Radar dataKey="score" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} isAnimationActive={false} />
             </RadarChart>
           </ResponsiveContainer>
         </div>}
