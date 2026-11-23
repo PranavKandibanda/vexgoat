@@ -1,11 +1,12 @@
 {
   "name": "vex-temp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --test tests/robotEventsClient.test.mjs",
     "lint": "eslint"
   },
   "dependencies": {

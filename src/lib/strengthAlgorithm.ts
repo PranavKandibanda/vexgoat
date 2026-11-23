@@ -17,7 +17,7 @@ const MAX_SKILLS = 238; // theoretical max combined (119 driver + 119 programmin
 
 function computeSkillsComponent(skills: SkillsSummary): number {
   // 50% weight, scaled 0-50
-  if (!skills || skills.total === 0) return 0;
+  if (!skills || !skills.total) return 0;
   const ratio = Math.min(skills.total / MAX_SKILLS, 1);
   return ratio * 50;
 }
@@ -64,7 +64,7 @@ function computeConsistencyComponent(skills: SkillsSummary, awards: Award[]): nu
   const eventFactor = Math.min(eventCount / 10, 1) * 12;
 
   // High repeated scores (count records above 50% of best)
-  const threshold = skills.total * 0.5;
+  const threshold = (skills.total ?? 0) * 0.5;
   let goodPerformances = 0;
   // Group by event and check driver+prog totals
   const eventBests = new Map<string, number>();

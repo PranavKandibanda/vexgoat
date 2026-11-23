@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchTeam, fetchSkills, fetchAwards } from "@/lib/robotEvents";
 import { calculateStrength } from "@/lib/strengthAlgorithm";
+import { CURRENT_SEASON_ID, PREVIOUS_SEASON_ID, VexApiError } from "@/lib/robotEventsClient";
 
 export async function GET(req: NextRequest) {
   const numbers = req.nextUrl.searchParams.get("numbers"); // comma-separated, e.g. "1234A,5678B"
@@ -18,26 +19,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: `Invalid team number: ${p}` }, { status: 400 });
     }
   }
+  const season = Number(req.nextUrl.searchParams.get("season") ?? CURRENT_SEASON_ID);
+  if (![CURRENT_SEASON_ID, PREVIOUS_SEASON_ID].includes(season)) return NextResponse.json({ error: "Invalid season." }, { status: 400 });
 
   try {
     const results = await Promise.all(
       parts.map(async (num) => {
         const team = await fetchTeam(num);
         const [skills, awards] = await Promise.all([
-          fetchSkills(team.id, team.number),
-          fetchAwards(team.id),
+          fetchSkills(team.id, team.number, season),
+          fetchAwards(team.id, season),
         ]);
-        const strength = calculateStrength(skills, awards);
+        const strength = season === PREVIOUS_SEASON_ID ? calculateStrength(skills, awards) : null;
         return { team, skills, awards, strength };
       })
     );
     return NextResponse.json({ teams: results });
-  } catch (err: any) {
-    if (err.message === "NOT_FOUND") {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message === "NOT_FOUND") {
       return NextResponse.json({ error: "One or more teams not found." }, { status: 404 });
     }
-    if (err.message === "RATE_LIMITED") {
-      return NextResponse.json({ error: "Rate limited. Try again later." }, { status: 429 });
+    if (err instanceof VexApiError && (err.status === 429 || err.status === 401 || err.status === 403)) {
+      return NextResponse.json({ error: err.status === 429 ? "Rate limited. Try again later." : "VEX Events API authentication failed." }, { status: err.status });
     }
     console.error("Compare API error:", err);
     return NextResponse.json({ error: "Failed to fetch comparison data." }, { status: 500 });

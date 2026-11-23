@@ -1,0 +1,390 @@
+{
+    "recordedAt":  "2026-11-22T21:03:12.4586785-06:00",
+    "source":  "https://events.vex.com/api/v2",
+    "note":  "Public API response rows recorded with authenticated read-only requests; token omitted.",
+    "season204":  {
+                      "id":  204,
+                      "name":  "VEX V5 Robotics Competition 2026-2027: Override",
+                      "program":  {
+                                      "id":  1,
+                                      "name":  "VEX V5 Robotics Competition",
+                                      "code":  "V5RC"
+                                  },
+                      "start":  "2026-04-30T17:00:00-04:00",
+                      "end":  "2027-01-31T23:59:00-05:00",
+                      "years_start":  2026,
+                      "years_end":  2027
+                  },
+    "event204":  {
+                     "id":  64365,
+                     "sku":  "RE-V5RC-26-4365",
+                     "name":  "NSW | Northwest | VEX V5 Robotics Competition™ (Blended): Override™ Open Scrimmage Season Opener @ Oxley High School",
+                     "start":  "2026-07-01T00:00:00-04:00",
+                     "end":  "2026-07-01T00:00:00-04:00",
+                     "season":  {
+                                    "id":  204,
+                                    "name":  "VEX V5 Robotics Competition 2026-2027: Override",
+                                    "code":  null
+                                },
+                     "program":  {
+                                     "id":  1,
+                                     "name":  "VEX V5 Robotics Competition",
+                                     "code":  "V5RC"
+                                 },
+                     "location":  {
+                                      "venue":  "Oxley High School",
+                                      "address_1":  "Piper Street",
+                                      "address_2":  null,
+                                      "city":  "North Tamworth",
+                                      "region":  "New South Wales",
+                                      "postcode":  "2340",
+                                      "country":  "Australia",
+                                      "coordinates":  {
+                                                          "lat":  -31.077801999999998,
+                                                          "lon":  150.92606900000001
+                                                      }
+                                  },
+                     "locations":  {
+                                       "2026-07-01":  {
+                                                          "venue":  "Oxley High School",
+                                                          "address_1":  "Piper Street",
+                                                          "address_2":  null,
+                                                          "city":  "North Tamworth",
+                                                          "region":  "New South Wales",
+                                                          "postcode":  "2340",
+                                                          "country":  "Australia",
+                                                          "coordinates":  {
+                                                                              "lat":  -31.077801999999998,
+                                                                              "lon":  150.92606900000001
+                                                                          }
+                                                      }
+                                   },
+                     "divisions":  [
+                                       {
+                                           "id":  1,
+                                           "name":  "Division 1",
+                                           "order":  1
+                                       }
+                                   ],
+                     "level":  "Other",
+                     "ongoing":  false,
+                     "awards_finalized":  true,
+                     "event_type":  null
+                 },
+    "team204":  {
+                    "id":  198329,
+                    "number":  "23401D",
+                    "team_name":  "Farrer C",
+                    "robot_name":  "",
+                    "organization":  "FMAHS",
+                    "location":  {
+                                     "venue":  null,
+                                     "address_1":  "",
+                                     "address_2":  null,
+                                     "city":  "Calala",
+                                     "region":  "New South Wales",
+                                     "postcode":  "2340",
+                                     "country":  "Australia",
+                                     "coordinates":  {
+                                                         "lat":  -31.100000000000001,
+                                                         "lon":  151
+                                                     }
+                                 },
+                    "registered":  true,
+                    "program":  {
+                                    "id":  1,
+                                    "name":  "VEX V5 Robotics Competition",
+                                    "code":  "V5RC"
+                                },
+                    "grade":  "High School"
+                },
+    "match204":  {
+                     "id":  149780623,
+                     "event":  {
+                                   "id":  64365,
+                                   "name":  "NSW | Northwest | VEX V5 Robotics Competition™ (Blended): Override™ Open Scrimmage Season Opener @ Oxley High School",
+                                   "code":  "RE-V5RC-26-4365"
+                               },
+                     "division":  {
+                                      "id":  1,
+                                      "name":  "Division 1",
+                                      "code":  null
+                                  },
+                     "round":  2,
+                     "instance":  1,
+                     "matchnum":  1,
+                     "scheduled":  "2026-06-30T19:00:00-04:00",
+                     "started":  "2026-06-30T20:49:27-04:00",
+                     "field":  "Main Field",
+                     "scored":  false,
+                     "scoring_system":  null,
+                     "name":  "Qualifier #1",
+                     "alliances":  [
+                                       {
+                                           "color":  "blue",
+                                           "score":  14,
+                                           "teams":  [
+                                                         {
+                                                             "team":  {
+                                                                          "id":  185603,
+                                                                          "name":  "23401B",
+                                                                          "code":  null
+                                                                      },
+                                                             "sitting":  false
+                                                         },
+                                                         {
+                                                             "team":  {
+                                                                          "id":  185604,
+                                                                          "name":  "23401C",
+                                                                          "code":  null
+                                                                      },
+                                                             "sitting":  false
+                                                         }
+                                                     ]
+                                       },
+                                       {
+                                           "color":  "red",
+                                           "score":  29,
+                                           "teams":  [
+                                                         {
+                                                             "team":  {
+                                                                          "id":  198329,
+                                                                          "name":  "23401D",
+                                                                          "code":  null
+                                                                      },
+                                                             "sitting":  false
+                                                         },
+                                                         {
+                                                             "team":  {
+                                                                          "id":  198334,
+                                                                          "name":  "15820A",
+                                                                          "code":  null
+                                                                      },
+                                                             "sitting":  false
+                                                         }
+                                                     ]
+                                       }
+                                   ],
+                     "updated_at":  "2026-07-02T22:05:02-04:00"
+                 },
+    "ranking204":  {
+                       "id":  41670506,
+                       "event":  {
+                                     "id":  64228,
+                                     "name":  "VIC | VEX V5 Robotics Competition™ (Blended): Override™ Tournament @ Templestowe College - Season Opener",
+                                     "code":  "RE-V5RC-26-4228"
+                                 },
+                       "division":  {
+                                        "id":  1,
+                                        "name":  "Division Bus",
+                                        "code":  null
+                                    },
+                       "rank":  13,
+                       "team":  {
+                                    "id":  197417,
+                                    "name":  "84134H",
+                                    "code":  null
+                                },
+                       "wins":  2,
+                       "losses":  5,
+                       "ties":  0,
+                       "wp":  4,
+                       "ap":  24,
+                       "sp":  110,
+                       "high_score":  46,
+                       "average_points":  23.289999999999999,
+                       "total_points":  163
+                   },
+    "skill204":  {
+                     "id":  79050224,
+                     "event":  {
+                                   "id":  64228,
+                                   "name":  "VIC | VEX V5 Robotics Competition™ (Blended): Override™ Tournament @ Templestowe College - Season Opener",
+                                   "code":  "RE-V5RC-26-4228"
+                               },
+                     "team":  {
+                                  "id":  170598,
+                                  "name":  "3477D",
+                                  "code":  "HS"
+                              },
+                     "type":  "driver",
+                     "season":  {
+                                    "id":  204,
+                                    "name":  "VEX V5 Robotics Competition 2026-2027: Override",
+                                    "code":  null
+                                },
+                     "division":  null,
+                     "rank":  1,
+                     "score":  38,
+                     "attempts":  1
+                 },
+    "award204":  {
+                     "id":  280265,
+                     "event":  {
+                                   "id":  64228,
+                                   "name":  "VIC | VEX V5 Robotics Competition™ (Blended): Override™ Tournament @ Templestowe College - Season Opener",
+                                   "code":  "RE-V5RC-26-4228"
+                               },
+                     "order":  54,
+                     "title":  "Tournament Champions (V5)",
+                     "qualifications":  [
+
+                                        ],
+                     "designation":  null,
+                     "classification":  null,
+                     "teamWinners":  [
+                                         {
+                                             "division":  {
+                                                              "id":  1,
+                                                              "name":  "Division Bus",
+                                                              "code":  null
+                                                          },
+                                             "team":  {
+                                                          "id":  170597,
+                                                          "name":  "3477B",
+                                                          "code":  null
+                                                      }
+                                         },
+                                         {
+                                             "division":  {
+                                                              "id":  1,
+                                                              "name":  "Division Bus",
+                                                              "code":  null
+                                                          },
+                                             "team":  {
+                                                          "id":  170598,
+                                                          "name":  "3477D",
+                                                          "code":  null
+                                                      }
+                                         }
+                                     ],
+                     "individualWinners":  [
+
+                                           ]
+                 },
+    "historicalMatch":  {
+                            "id":  116677133,
+                            "event":  {
+                                          "id":  59975,
+                                          "name":  "Melbourne | Blended Tournament | Templestowe College: VEX @ TC",
+                                          "code":  "RE-V5RC-25-9975"
+                                      },
+                            "division":  {
+                                             "id":  1,
+                                             "name":  "Spenber Division",
+                                             "code":  null
+                                         },
+                            "round":  2,
+                            "instance":  1,
+                            "matchnum":  1,
+                            "scheduled":  "2025-06-30T21:00:00-04:00",
+                            "started":  "2025-06-30T21:18:03-04:00",
+                            "field":  "Field 1",
+                            "scored":  false,
+                            "scoring_system":  null,
+                            "name":  "Qualifier #1",
+                            "alliances":  [
+                                              {
+                                                  "color":  "blue",
+                                                  "score":  90,
+                                                  "teams":  [
+                                                                {
+                                                                    "team":  {
+                                                                                 "id":  128435,
+                                                                                 "name":  "1002X",
+                                                                                 "code":  null
+                                                                             },
+                                                                    "sitting":  false
+                                                                },
+                                                                {
+                                                                    "team":  {
+                                                                                 "id":  97178,
+                                                                                 "name":  "52050A",
+                                                                                 "code":  null
+                                                                             },
+                                                                    "sitting":  false
+                                                                }
+                                                            ]
+                                              },
+                                              {
+                                                  "color":  "red",
+                                                  "score":  49,
+                                                  "teams":  [
+                                                                {
+                                                                    "team":  {
+                                                                                 "id":  185675,
+                                                                                 "name":  "31260X",
+                                                                                 "code":  null
+                                                                             },
+                                                                    "sitting":  false
+                                                                },
+                                                                {
+                                                                    "team":  {
+                                                                                 "id":  174422,
+                                                                                 "name":  "1002S",
+                                                                                 "code":  null
+                                                                             },
+                                                                    "sitting":  false
+                                                                }
+                                                            ]
+                                              }
+                                          ],
+                            "updated_at":  "2025-07-01T02:03:52-04:00"
+                        },
+    "upcomingEvent":  {
+                          "id":  66519,
+                          "sku":  "VE-V5-26-66519",
+                          "name":  "Knight City Friendly - Override: VEX V5 Robotics Competition",
+                          "start":  "2026-12-02T00:00:00-05:00",
+                          "end":  "2026-12-02T00:00:00-05:00",
+                          "season":  {
+                                         "id":  204,
+                                         "name":  "VEX V5 Robotics Competition 2026-2027: Override",
+                                         "code":  null
+                                     },
+                          "program":  {
+                                          "id":  1,
+                                          "name":  "VEX V5 Robotics Competition",
+                                          "code":  "V5RC"
+                                      },
+                          "location":  {
+                                           "venue":  "Lynwood Bateman Hall",
+                                           "address_1":  "11331 Ernestine Ave",
+                                           "address_2":  null,
+                                           "city":  "Lynwood",
+                                           "region":  "California",
+                                           "postcode":  "90262",
+                                           "country":  "United States",
+                                           "coordinates":  {
+                                                               "lat":  33.925206000000003,
+                                                               "lon":  -118.198756
+                                                           }
+                                       },
+                          "locations":  {
+                                            "2026-12-02":  {
+                                                               "venue":  "Lynwood Bateman Hall",
+                                                               "address_1":  "11331 Ernestine Ave",
+                                                               "address_2":  null,
+                                                               "city":  "Lynwood",
+                                                               "region":  "California",
+                                                               "postcode":  "90262",
+                                                               "country":  "United States",
+                                                               "coordinates":  {
+                                                                                   "lat":  33.925206000000003,
+                                                                                   "lon":  -118.198756
+                                                                               }
+                                                           }
+                                        },
+                          "divisions":  [
+                                            {
+                                                "id":  1,
+                                                "name":  "Default",
+                                                "order":  1
+                                            }
+                                        ],
+                          "level":  "Other",
+                          "ongoing":  false,
+                          "awards_finalized":  false,
+                          "event_type":  null
+                      }
+}

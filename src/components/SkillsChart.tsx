@@ -9,11 +9,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
 } from "recharts";
 import type { SkillsSummary } from "@/lib/robotEvents";
 
@@ -30,22 +25,12 @@ export default function SkillsChart({ skills }: Props) {
     { name: "Total", score: skills.total },
   ];
 
-  const radarData = [
-    { subject: "Driver", A: skills.driver, fullMark: 450 },
-    { subject: "Programming", A: skills.programming, fullMark: 450 },
-    { subject: "Total", A: skills.total, fullMark: 900 },
-    {
-      subject: "World Rank",
-      A: skills.worldRank ? Math.max(0, 500 - skills.worldRank) : 0,
-      fullMark: 500,
-    },
-  ];
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
       <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
         Skills Breakdown
       </h3>
+      {skills.records.length === 0 && <p className="mb-4 text-sm text-gray-500">No published skills runs for this season.</p>}
 
       {/* Table */}
       <div className="overflow-x-auto mb-6">
@@ -64,7 +49,7 @@ export default function SkillsChart({ skills }: Props) {
             <tr className="border-b border-gray-100 dark:border-gray-700/50">
               <td className="py-2 text-gray-800 dark:text-gray-200">Driver</td>
               <td className="py-2 text-right font-mono font-bold text-red-500">
-                {skills.driver}
+                {skills.driver ?? "—"}
               </td>
             </tr>
             <tr className="border-b border-gray-100 dark:border-gray-700/50">
@@ -72,7 +57,7 @@ export default function SkillsChart({ skills }: Props) {
                 Programming
               </td>
               <td className="py-2 text-right font-mono font-bold text-blue-500">
-                {skills.programming}
+                {skills.programming ?? "—"}
               </td>
             </tr>
             <tr className="border-b border-gray-100 dark:border-gray-700/50">
@@ -80,7 +65,7 @@ export default function SkillsChart({ skills }: Props) {
                 Total
               </td>
               <td className="py-2 text-right font-mono font-bold text-purple-500">
-                {skills.total}
+                {skills.total ?? "—"}
               </td>
             </tr>
             <tr>
@@ -96,7 +81,7 @@ export default function SkillsChart({ skills }: Props) {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {skills.records.length > 0 && <div>
         {/* Bar chart */}
         <div>
           <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">
@@ -116,26 +101,7 @@ export default function SkillsChart({ skills }: Props) {
           </ResponsiveContainer>
         </div>
 
-        {/* Radar chart */}
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-            Performance Radar
-          </p>
-          <ResponsiveContainer width="100%" height={200}>
-            <RadarChart data={radarData}>
-              <PolarGrid stroke="#374151" />
-              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-              <PolarRadiusAxis tick={false} axisLine={false} />
-              <Radar
-                dataKey="A"
-                stroke="#ef4444"
-                fill="#ef4444"
-                fillOpacity={0.3}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      </div>}
     </div>
   );
 }

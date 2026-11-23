@@ -24,12 +24,12 @@ interface TeamData {
     location: { city: string; region: string; country: string };
     grade: string;
   };
-  skills: { driver: number; programming: number; total: number; worldRank: number | null };
+  skills: { driver: number | null; programming: number | null; total: number | null; worldRank: number | null };
   awards: { name: string; category: string }[];
-  strength: { rsi: number; tier: string; tierEmoji: string; skillsComponent: number; awardsComponent: number; consistencyComponent: number };
+  strength: { rsi: number; tier: string; tierEmoji: string; skillsComponent: number; awardsComponent: number; consistencyComponent: number } | null;
 }
 
-export default function CompareTeams() {
+export default function CompareTeams({ season = 204 }: { season?: number }) {
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,7 @@ export default function CompareTeams() {
     setLoading(true);
     setData(null);
     try {
-      const res = await fetch(`/api/compare?numbers=${encodeURIComponent(a)},${encodeURIComponent(b)}`);
+      const res = await fetch(`/api/compare?numbers=${encodeURIComponent(a)},${encodeURIComponent(b)}&season=${season}`);
       const json = await res.json();
       if (!res.ok) {
         setError(json.error ?? "Failed to fetch.");
@@ -128,11 +128,7 @@ export default function CompareTeams() {
                   <Stat label="Programming" value={d.skills.programming} />
                   <Stat label="Total Skills" value={d.skills.total} />
                   <Stat label="Awards" value={d.awards.length} />
-                  <Stat
-                    label="RSI"
-                    value={d.strength.rsi}
-                    extra={`${d.strength.tierEmoji} ${d.strength.tier}`}
-                  />
+                  {d.strength && <Stat label="Historical strength estimate" value={d.strength.rsi} extra={d.strength.tier} />}
                   <Stat
                     label="World Rank"
                     value={d.skills.worldRank ? `#${d.skills.worldRank}` : "N/A"}
@@ -178,7 +174,7 @@ export default function CompareTeams() {
           </div>
 
           {/* RSI comparison radar */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+          {data[0].strength && data[1].strength && <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               Strength Radar
             </h3>
@@ -187,26 +183,26 @@ export default function CompareTeams() {
                 data={[
                   {
                     subject: "Skills",
-                    A: data[0].strength.skillsComponent,
-                    B: data[1].strength.skillsComponent,
+                    A: data[0].strength!.skillsComponent,
+                    B: data[1].strength!.skillsComponent,
                     fullMark: 50,
                   },
                   {
                     subject: "Awards",
-                    A: data[0].strength.awardsComponent,
-                    B: data[1].strength.awardsComponent,
+                    A: data[0].strength!.awardsComponent,
+                    B: data[1].strength!.awardsComponent,
                     fullMark: 30,
                   },
                   {
                     subject: "Consistency",
-                    A: data[0].strength.consistencyComponent,
-                    B: data[1].strength.consistencyComponent,
+                    A: data[0].strength!.consistencyComponent,
+                    B: data[1].strength!.consistencyComponent,
                     fullMark: 20,
                   },
                   {
                     subject: "RSI",
-                    A: data[0].strength.rsi,
-                    B: data[1].strength.rsi,
+                    A: data[0].strength!.rsi,
+                    B: data[1].strength!.rsi,
                     fullMark: 100,
                   },
                 ]}
@@ -219,7 +215,7 @@ export default function CompareTeams() {
                 <Legend />
               </RadarChart>
             </ResponsiveContainer>
-          </div>
+          </div>}
         </>
       )}
     </div>
@@ -232,13 +228,13 @@ function Stat({
   extra,
 }: {
   label: string;
-  value: string | number;
+  value: string | number | null;
   extra?: string;
 }) {
   return (
     <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-2">
       <span className="text-xs text-gray-400">{label}</span>
-      <p className="font-bold text-gray-800 dark:text-gray-200">{value}</p>
+      <p className="font-bold text-gray-800 dark:text-gray-200">{value ?? "—"}</p>
       {extra && <span className="text-xs text-gray-400">{extra}</span>}
     </div>
   );
